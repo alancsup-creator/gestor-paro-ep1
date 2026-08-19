@@ -296,7 +296,7 @@
     document.getElementById('fechaParo').valueAsDate = new Date();
 
     // Sincronizar plantilla inicial de personal desde Firestore si existe
-    db.collection("configuracion_ep1_ep1").doc("plantel").onSnapshot((doc) => {
+    db.collection("configuracion_ep1").doc("plantel").onSnapshot((doc) => {
         if (doc.exists && doc.data().docentes) {
             baseDocentes = doc.data().docentes;
         }
@@ -420,7 +420,7 @@
 
         if (unsubscribeFirestore) unsubscribeFirestore();
 
-        unsubscribeFirestore = db.collection("registros_paros").doc(fecha).onSnapshot((doc) => {
+        unsubscribeFirestore = db.collection("registros_paros_ep1").doc(fecha).onSnapshot((doc) => {
             if (doc.exists) {
                 registrosBase[fecha] = doc.data().docentes;
             } else {
