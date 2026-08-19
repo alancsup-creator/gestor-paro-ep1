@@ -638,7 +638,7 @@
         diaData.forEach(d => {
             const esAuxiliar = d.cargo === "Auxiliar" || d.nombre.includes('[Auxiliar]');
             const tipo = esAuxiliar ? "Auxiliar" : "Docente";
-            const nombreLimpio = d.nombre.replace('[Auxiliar] ', '');
+            const nombreLimpio = d.nombre.replace('[Auxiliar] ', '').replace(/"/g, '""');
             
             let estadoFinal = "No le correspondía asistir";
             let postura = "N/C";
@@ -665,6 +665,7 @@
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 </script>
 
