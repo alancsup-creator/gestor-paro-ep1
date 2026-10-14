@@ -299,16 +299,16 @@
     document.getElementById('fechaParo').valueAsDate = new Date();
 
     db.collection("configuracion_ep1").doc("plantel").onSnapshot((doc) => {
-    if (doc.exists && doc.data().docentes) {
-        baseDocentes = doc.data().docentes;
-    } else {
-        baseDocentes = [];
-    }
-    renderizarListaGestion();
-}, (error) => {
-    console.error("Error al escuchar plantel EP1:", error);
-});
-
+        if (doc.exists && doc.data().docentes && doc.data().docentes.length > 0) {
+            baseDocentes = doc.data().docentes;
+        }
+        // Si el documento no existe o viene vacío, conserva la lista por defecto
+        renderizarListaGestion();
+    }, (error) => {
+        console.error("Error al escuchar plantel EP1:", error);
+        renderizarListaGestion();
+    });
+	
     function toggleGestionPersonal() {
         const body = document.getElementById('bodyGestionPersonal');
         const icon = document.getElementById('iconGestion');
@@ -406,7 +406,7 @@
         if (confirm('¿Seguro que querés eliminar a este agente del plantel general?')) {
             baseDocentes = baseDocentes.filter(d => d.id !== id);
             
-            db.collection("configuracion_ep1_ep1").doc("plantel").set({ docentes: baseDocentes })
+            db.collection("configuracion_ep1").doc("plantel").set({ docentes: baseDocentes })
             .then(() => {
                 renderizarListaGestion();
                 const fecha = document.getElementById('fechaParo').value;
@@ -417,7 +417,7 @@
             .catch(err => alert("Error al actualizar en Firebase: " + err.message));
         }
     }
-
+	
 	// Mostrar/Ocultar panel de edición
 function mostrarFormularioEditar(index) {
     const form = document.getElementById(`form-edit-${index}`);
@@ -738,6 +738,76 @@ function guardarDiasEditados(index) {
         return docente.dias.includes(diaSemana);
     });
 }
+	// -------------------------------------------------------------
+    // FUNCIÓN PARA AGREGAR UN NUEVO AGENTE AL PLANTEL DE EP 1
+    // -------------------------------------------------------------
+    function agregarNuevoDocente() {
+        const inputNombre = document.getElementById('nuevoNombre');
+        const selectCargo = document.getElementById('nuevoCargoSelect');
+        const inputCargoTexto = document.getElementById('nuevoCargoTexto');
+        const inputEscuela = document.getElementById('nuevaEscuela');
+        const selectTurno = document.getElementById('nuevoTurno');
+        
+        const checkboxesDias = document.querySelectorAll('.check-dia:checked');
+        const diasSeleccionados = Array.from(checkboxesDias).map(cb => parseInt(cb.value));
+
+        const nombre = inputNombre ? inputNombre.value.trim() : '';
+        let cargo = selectCargo ? selectCargo.value : '';
+        if (cargo === 'OTRO') {
+            cargo = inputCargoTexto ? inputCargoTexto.value.trim() : '';
+        }
+        const escuela = inputEscuela ? inputEscuela.value.trim() : 'EP 1';
+        const turno = selectTurno ? selectTurno.value : 'Mañana';
+
+        if (!nombre) {
+            alert("Por favor, ingresá el nombre y apellido del agente.");
+            return;
+        }
+
+        if (!cargo) {
+            alert("Por favor, especificá el cargo.");
+            return;
+        }
+
+        if (diasSeleccionados.length === 0) {
+            alert("Seleccioná al menos un día de asistencia.");
+            return;
+        }
+
+        const nuevoId = baseDocentes.length > 0 ? Math.max(...baseDocentes.map(d => d.id || 0)) + 1 : 1;
+
+        const nuevoAgente = {
+            id: nuevoId,
+            nombre: nombre,
+            escuela: escuela,
+            turno: turno,
+            cargo: cargo,
+            dias: diasSeleccionados
+        };
+
+        baseDocentes.push(nuevoAgente);
+
+        db.collection("configuracion_ep1").doc("plantel").set({ docentes: baseDocentes })
+            .then(() => {
+                alert("¡Agente agregado con éxito al plantel general de EP 1!");
+                
+                inputNombre.value = '';
+                if (inputCargoTexto) inputCargoTexto.value = '';
+                selectCargo.value = 'MG';
+                verificarCargoOtro('MG');
+
+                renderizarListaGestion();
+
+                const fecha = document.getElementById('fechaParo').value;
+                if (fecha && typeof inicializarDia === 'function') {
+                    inicializarDia();
+                }
+            })
+            .catch(err => {
+                console.error("Error al guardar en Firebase:", err);
+                alert("Error al guardar en Firebase: " + err.message);
+            });
+    }
 </script>
 
 </body>
